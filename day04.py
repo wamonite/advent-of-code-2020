@@ -9,6 +9,7 @@ HCL_MIN = ord('0')
 HCL_MAX = ord('f')
 PID_MIN = ord('0')
 PID_MAX = ord('9')
+DEBUG = False
 
 
 def check_passport_1a(passport_lookup):
@@ -67,7 +68,8 @@ def check_passport_2(passport_lookup):
             validate('fields', PID_MIN <= ord(c) <= PID_MAX)
 
     except ValidationException as e:
-        # print(f'  {e}: {passport_lookup.get(str(e), "-")}')
+        if DEBUG:
+            print(f'  {e}: {passport_lookup}')
         return False
 
     return True
@@ -78,34 +80,34 @@ def count_validated_passports(validate_func, passport_list):
     return len(list(filter(validate_func, passport_list)))
 
 
-def load_file(file_name):
-    passport_list = []
+def parse_passports(lines):
     passport_lookup = {}
-    with open(file_name) as file_object:
-        for line in file_object.readlines():
-            line = line.strip()
-            if line:
-                for field in line.split():
-                    k, v = field.split(':')
-                    passport_lookup[k] = v
+    for line in map(str.strip, lines):
+        if line:
+            for field in line.split():
+                k, v = field.split(':')
+                passport_lookup[k] = v
 
-            else:
-                passport_list.append(passport_lookup)
-                passport_lookup = {}
+        else:
+            yield passport_lookup
+            passport_lookup = {}
 
     if passport_lookup:
-        passport_list.append(passport_lookup)
+        yield passport_lookup
 
-    return passport_list
+
+def load_file(file_name):
+    with open(file_name) as file_object:
+        return list(parse_passports(file_object.readlines()))
 
 
 def run():
-    passport_list = load_file('data/day4.txt')
+    passport_list = load_file('data/day04.txt')
 
     print('part1a', count_validated_passports(check_passport_1a, passport_list))
     print('part1b', count_validated_passports(check_passport_1b, passport_list))
 
-    print('part2 test 4 ==', count_validated_passports(check_passport_2, load_file('data/day4_test.txt')))
+    print('part2 test 4 ==', count_validated_passports(check_passport_2, load_file('data/day04_test.txt')))
 
     print('part2', count_validated_passports(check_passport_2, passport_list))
 
