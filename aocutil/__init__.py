@@ -19,3 +19,8 @@ def timeit(method):
         return result
 
     return timed
+
+
+def load_file(file_name):
+    with open(file_name) as file_object:
+        return list(map(str.strip, file_object.readlines()))
