@@ -31,9 +31,9 @@ def find_seat(sorted_seat_list):
 
 
 def run():
-    print('part1 test', max(map(lambda v: calculate_seat(*v), map(parse_bp, load_file('data/day5_test.txt')))))
+    print('part1 test', max(map(lambda v: calculate_seat(*v), map(parse_bp, load_file('data/day05_test.txt')))))
 
-    seat_list = sorted(map(lambda v: calculate_seat(*v), map(parse_bp, load_file('data/day5.txt'))))
+    seat_list = sorted(map(lambda v: calculate_seat(*v), map(parse_bp, load_file('data/day05.txt'))))
     print('part1', seat_list[-1])
     print('part2', find_seat(seat_list))
 

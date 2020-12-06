@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+from contextlib import contextmanager
 
 
 # https://medium.com/pythonhive/python-decorator-to-measure-the-execution-time-of-methods-fa04cb6bb36d
@@ -19,6 +20,14 @@ def timeit(method):
         return result
 
     return timed
+
+
+@contextmanager
+def timeitc():
+    ts = time.time()
+    yield
+    te = time.time()
+    print(f'{(te - ts) * 1000:.2f}ms')
 
 
 def load_file(file_name):
