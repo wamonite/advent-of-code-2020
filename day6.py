@@ -19,25 +19,12 @@ def parse_answers(lines):
 
 
 def count_answers_1(answer_set_list):
-    all_answer_set = set()
-    for answer_set in answer_set_list:
-        all_answer_set |= answer_set
-
-    return len(all_answer_set)
+    return len(set.union(*answer_set_list))
 
 
 def count_answers_2(answer_set_list):
-    all_answer_set = set()
-    invalid_answer_set = set()
-    for answer_set in answer_set_list:
-        answer_set -= invalid_answer_set
-        if all_answer_set or invalid_answer_set:
-            all_answer_set &= answer_set
-        else:
-            all_answer_set = answer_set
-        invalid_answer_set |= answer_set - all_answer_set
-
-    return len(all_answer_set)
+    # oh dear, my first implementation of this was soooo complicated
+    return len(set.intersection(*answer_set_list))
 
 
 def run():
