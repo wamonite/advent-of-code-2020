@@ -4,47 +4,51 @@
 from aocutil import load_file
 
 
-def parse_answers_1(lines):
-    answer_set = set()
+def parse_answers(lines):
+    answer_set_list = []
     for line in lines:
         if line:
-            answer_set = answer_set | set(line)
+            answer_set_list.append(set(line))
 
         else:
-            yield len(answer_set)
-            answer_set = set()
+            yield answer_set_list
+            answer_set_list = []
 
-    if answer_set:
-        yield len(answer_set)
+    if answer_set_list:
+        yield answer_set_list
 
 
-def parse_answers_2(lines):
+def count_answers_1(answer_set_list):
+    all_answer_set = set()
+    for answer_set in answer_set_list:
+        all_answer_set |= answer_set
+
+    return len(all_answer_set)
+
+
+def count_answers_2(answer_set_list):
     all_answer_set = set()
     invalid_answer_set = set()
-    for line in lines:
-        if line:
-            answer_set = set(line) - invalid_answer_set
-            if all_answer_set or invalid_answer_set:
-                all_answer_set &= answer_set
-            else:
-                all_answer_set = answer_set
-            invalid_answer_set |= answer_set - all_answer_set
-
+    for answer_set in answer_set_list:
+        answer_set -= invalid_answer_set
+        if all_answer_set or invalid_answer_set:
+            all_answer_set &= answer_set
         else:
-            yield len(all_answer_set)
-            all_answer_set = set()
-            invalid_answer_set = set()
+            all_answer_set = answer_set
+        invalid_answer_set |= answer_set - all_answer_set
 
-    if all_answer_set:
-        yield len(all_answer_set)
+    return len(all_answer_set)
 
 
 def run():
-    print('part1 test', sum(parse_answers_1(load_file('data/day6_test.txt'))))
-    print('part1', sum(parse_answers_1(load_file('data/day6.txt'))))
+    test_data = load_file('data/day6_test.txt')
+    data = load_file('data/day6.txt')
 
-    print('part2 test', sum(parse_answers_2(load_file('data/day6_test.txt'))))
-    print('part2', sum(parse_answers_2(load_file('data/day6.txt'))))
+    print('part1 test', sum(map(count_answers_1, parse_answers(test_data))))
+    print('part1', sum(map(count_answers_1, parse_answers(data))))
+
+    print('part2 test', sum(map(count_answers_2, parse_answers(test_data))))
+    print('part2', sum(map(count_answers_2, parse_answers(data))))
 
 
 if __name__ == "__main__":
