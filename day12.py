@@ -4,10 +4,6 @@
 from aocutil import load_file_generator
 
 
-DIR_LIST = ('N', 'E', 'S', 'W')
-DIR_START = DIR_LIST.index('E')
-
-
 def parse_file(line_list):
     for line in line_list:
         cmd = line[0]
@@ -16,8 +12,11 @@ def parse_file(line_list):
 
 
 class Navigator(object):
+    DIR_LIST = ('N', 'E', 'S', 'W')
+    DIR_START = DIR_LIST.index('E')
+
     def __init__(self):
-        self.dir = DIR_START
+        self.dir = self.DIR_START
         self.x = 0
         self.y = 0
 
@@ -60,20 +59,63 @@ class Navigator(object):
         # print(f'{cmd} {val} => {self.dir=} {self.x=} {self.y=}')
 
 
-def execute_commands(cmd_list):
-    n = Navigator()
+class WayPointNavigator(object):
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.wx = 10
+        self.wy = 1
+
+    @property
+    def pos(self):
+        return self.x, self.y
+
+    def rotate(self, val):
+        step = val // 90
+        for _ in range(abs(step)):
+            self.wx, self.wy = (self.wy, -self.wx) if step > 0 else (-self.wy, self.wx)
+
+    def execute(self, cmd, val):
+        if cmd == 'F':
+            self.x += val * self.wx
+            self.y += val * self.wy
+        elif cmd == 'L':
+            self.rotate(-val)
+        elif cmd == 'R':
+            self.rotate(val)
+        elif cmd == 'N':
+            self.wy += val
+        elif cmd == 'S':
+            self.wy -= val
+        elif cmd == 'E':
+            self.wx += val
+        elif cmd == 'W':
+            self.wx -= val
+        else:
+            raise KeyError(cmd)
+
+        # print(f'{cmd} {val} => {self.wx=} {self.wy=} {self.x=} {self.y=}')
+
+
+def execute_commands(cmd_list, navigator):
     for cmd, val in cmd_list:
-        n.execute(cmd, val)
-    x, y = n.pos
+        navigator.execute(cmd, val)
+    x, y = navigator.pos
     return abs(x) + abs(y)
 
 
 def run():
-    result = execute_commands(parse_file(load_file_generator('data/day12_test.txt')))
+    result = execute_commands(parse_file(load_file_generator('data/day12_test.txt')), Navigator())
     print(f'part1 test 25 = {result}')
 
-    result = execute_commands(parse_file(load_file_generator('data/day12.txt')))
+    result = execute_commands(parse_file(load_file_generator('data/day12.txt')), Navigator())
     print(f'part1 = {result}')
+
+    result = execute_commands(parse_file(load_file_generator('data/day12_test.txt')), WayPointNavigator())
+    print(f'part2 test 286 = {result}')
+
+    result = execute_commands(parse_file(load_file_generator('data/day12.txt')), WayPointNavigator())
+    print(f'part2 = {result}')
 
 
 if __name__ == "__main__":
