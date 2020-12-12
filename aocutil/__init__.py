@@ -33,3 +33,9 @@ def timeitc():
 def load_file(file_name):
     with open(file_name) as file_object:
         return list(map(str.strip, file_object.readlines()))
+
+
+def load_file_generator(file_name):
+    with open(file_name) as file_object:
+        for line in file_object:
+            yield line.strip()
