@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from aocutil import load_file, timeit
+from math import lcm
 
 
 def parse_file(file_name):
@@ -35,7 +36,13 @@ def find_first(bus_id_list):
     _, step = bus_id_list.pop(0)
     ts = 0
     for offset, bus_id in bus_id_list:
-        ts, step = find_step(ts, step, offset, bus_id)
+        # now using lcm from https://github.com/alasdairnicol/advent-of-code-2020/blob/master/day13b.py
+        # ts, step = find_step(ts, step, offset, bus_id)
+        while (ts + offset) % bus_id:
+            # print(f'{ts=} {offset=} {bus_id=} {step=}')
+            ts += step
+
+        step = lcm(step, bus_id)
 
     return ts
 
