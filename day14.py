@@ -68,29 +68,30 @@ def execute_commands_1(cmd_list):
 
 
 def generate_bitmasks(mask_val):
-    # count bits
     bit_count = 0
     shift_val = mask_val
-    for _ in range(36):
+    while shift_val:
         if shift_val & 1:
             bit_count += 1
 
         shift_val >>= 1
 
-    bit_mask_list = []
-    one_val = 1 << 36
-    for bit_combination in product(range(2), repeat = bit_count):
-        shift_val = mask_val
-        bit_idx = 0
-        bit_mask = 0
-        for _ in range(36):
-            if shift_val & 1:
-                if bit_combination[bit_idx]:
-                    bit_mask |= one_val
-                bit_idx += 1
-            shift_val >>= 1
-            bit_mask >>= 1
-        bit_mask_list.append(bit_mask)
+    combination_list = list(product(range(2), repeat = bit_count))
+    bit_mask_list = [0] * len(combination_list)
+    check_bit = 1
+    msb = 1 << 36
+    combination_idx = 0
+    for _ in range(36):
+        check_val = mask_val & check_bit
+
+        for bit_mask_idx, combination in enumerate(combination_list):
+            if check_val and combination[combination_idx]:
+                bit_mask_list[bit_mask_idx] |= msb
+            bit_mask_list[bit_mask_idx] >>= 1
+
+        check_bit <<= 1
+        if check_val:
+            combination_idx += 1
 
     return bit_mask_list
 
