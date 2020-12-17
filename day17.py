@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from aocutil import load_file, timeit
-from functools import reduce, lru_cache
-from itertools import product
+from functools import reduce
+from itertools import product, count
+import attr
 
 
 def parse_data(file_name, dimensions):
@@ -20,75 +21,108 @@ def parse_data(file_name, dimensions):
     return tuple(cube_list)
 
 
-def get_limits(limits, coord):
-    try:
-        min_val, max_val = limits
+@attr.s
+class PocketDimension(object):
+    FIELD_NAMES = ['x', 'y', 'z', 'w']
 
-    except ValueError:
-        min_val = limits
-        max_val = limits
+    cube_list = attr.ib(init = False)
+    dimensions = attr.ib(init = False)
+    cache = attr.ib(init = False)
 
-    return (
-        tuple([v if v < min_v else min_v for min_v, v in zip(min_val, coord)]),
-        tuple([v if v > max_v else max_v for max_v, v in zip(max_val, coord)]),
-    )
+    @classmethod
+    def from_list(cls, cube_list):
+        c = cls()
+        c.cube_list = cube_list
+        c.dimensions = len(cube_list[0])
+        c.cache = {}
+        return c
 
+    @property
+    def field_names(self):
+        return self.FIELD_NAMES[:self.dimensions] + [f'd{v}' for v in range(len(self.FIELD_NAMES), self.dimensions)]
 
-@lru_cache(maxsize = 1000)
-def get_at(cube_list, coord):
-    return coord in cube_list
+    def get_limits(self):
+        return reduce(self._get_limits, self.cube_list)
 
-
-def print_cube_3(cube_list):
-    (minx, miny, minz), (maxx, maxy, maxz) = reduce(get_limits, cube_list)
-    for z in range(minz - 1, maxz + 2):
-        print(f'{z=}')
-        for y in range(miny - 1, maxy + 2):
-            for x in range(minx - 1, maxx + 2):
-                print('#' if get_at(cube_list, (x, y, z)) else '.', end = '')
-            print()
-
-
-def print_cube_4(cube_list):
-    (minx, miny, minz, minw), (maxx, maxy, maxz, maxw) = reduce(get_limits, cube_list)
-    for w in range(minw - 1, maxw + 2):
-        for z in range(minz - 1, maxz + 2):
-            print(f'{z=} {w=}')
+    def print(self):
+        min_vec, max_vec = self.get_limits()
+        minx, miny, *min_extra = min_vec
+        maxx, maxy, *max_extra = max_vec
+        range_list = [range(min_v - 1, max_v + 2) for min_v, max_v in zip(min_extra, max_extra)]
+        for extra_dim_val in product(*range_list):
+            print(', '.join([f'{self.field_names[idx]} = {extra_dim_val[idx - 2]}' for idx in range(2, self.dimensions)]))
             for y in range(miny - 1, maxy + 2):
                 for x in range(minx - 1, maxx + 2):
-                    print('#' if get_at(cube_list, (x, y, z, w)) else '.', end = '')
+                    print('#' if self.get_at((x, y) + extra_dim_val) else '.', end = '')
                 print()
 
+    @staticmethod
+    def _get_limits(limits, coord):
+        try:
+            min_val, max_val = limits
 
-@timeit
-def next_generation(cube_list):
-    min_val, max_val = reduce(get_limits, cube_list)
-    range_list = [range(min_v - 1, max_v + 2) for min_v, max_v in zip(min_val, max_val)]
-    new_cube_set = set()
-    for coord in product(*range_list):
-        active = get_at(cube_list, coord)
-        neighbour_range_list = [range(v - 1 , v + 2) for v in coord]
-        neighbour_count = 0
-        for neighbour_coord in product(*neighbour_range_list):
-            if neighbour_coord == coord:
-                continue
-            if get_at(cube_list, neighbour_coord):
-                neighbour_count += 1
+        except ValueError:
+            min_val = limits
+            max_val = limits
 
-        if active and neighbour_count == 2 or neighbour_count == 3:
-            new_cube_set.add(coord)
+        return (
+            tuple([v if v < min_v else min_v for min_v, v in zip(min_val, coord)]),
+            tuple([v if v > max_v else max_v for max_v, v in zip(max_val, coord)]),
+        )
 
-        if not active and neighbour_count == 3:
-            new_cube_set.add(coord)
+    def get_at(self, coord):
+        cache = self.cache
+        for v in coord:
+            # print(v, cache)
+            if v in cache and isinstance(cache[v], dict):
+                cache = cache[v]
+            elif v in cache and isinstance(cache[v], bool):
+                return cache[v]
 
-    return tuple(new_cube_set)
+        found = coord in self.cube_list
+
+        cache = self.cache
+        for v in coord[:-1]:
+            cache = cache.setdefault(v, {})
+        cache[coord[-1]] = found
+
+        return found
+
+    @timeit
+    def next(self):
+        min_val, max_val = self.get_limits()
+        range_list = [range(min_v - 1, max_v + 2) for min_v, max_v in zip(min_val, max_val)]
+        new_cube_set = set()
+        for coord in product(*range_list):
+            active = self.get_at(coord)
+            neighbour_range_list = [range(v - 1 , v + 2) for v in coord]
+            neighbour_count = 0
+            for neighbour_coord in product(*neighbour_range_list):
+                if neighbour_coord == coord:
+                    continue
+                if self.get_at(neighbour_coord):
+                    neighbour_count += 1
+
+            if active and neighbour_count == 2 or neighbour_count == 3:
+                new_cube_set.add(coord)
+
+            if not active and neighbour_count == 3:
+                new_cube_set.add(coord)
+
+        self.cube_list = tuple(new_cube_set)
+        self.cache = {}
+
+    @property
+    def cube_count(self):
+        return len(self.cube_list)
 
 
 def print_results(name, file_name, dimensions):
     cube_list = parse_data(file_name, dimensions)
+    p = PocketDimension.from_list(cube_list)
     for _ in range(6):
-        cube_list = next_generation(cube_list)
-    print(f'{name} {len(cube_list)}')
+        p.next()
+    print(f'{name} {p.cube_count}')
 
 
 def run():
