@@ -34,7 +34,7 @@ class PocketDimension(object):
         c = cls()
         c.cube_list = cube_list
         c.dimensions = len(cube_list[0])
-        c.cache = {}
+        c._seed_cache()
         return c
 
     @property
@@ -70,23 +70,24 @@ class PocketDimension(object):
             tuple([v if v > max_v else max_v for max_v, v in zip(max_val, coord)]),
         )
 
+    def _seed_cache(self):
+        self.cache = {}
+
+        for coord in self.cube_list:
+            cache = self.cache
+            for v in coord[:-1]:
+                cache = cache.setdefault(v, {})
+            cache[coord[-1]] = True
+
     def get_at(self, coord):
         cache = self.cache
         for v in coord:
-            # print(v, cache)
             if v in cache and isinstance(cache[v], dict):
                 cache = cache[v]
-            elif v in cache and isinstance(cache[v], bool):
-                return cache[v]
+            else:
+                return v in cache
 
-        found = coord in self.cube_list
-
-        cache = self.cache
-        for v in coord[:-1]:
-            cache = cache.setdefault(v, {})
-        cache[coord[-1]] = found
-
-        return found
+        return False
 
     @timeit
     def next(self):
@@ -110,7 +111,7 @@ class PocketDimension(object):
                 new_cube_set.add(coord)
 
         self.cube_list = tuple(new_cube_set)
-        self.cache = {}
+        self._seed_cache()
 
     @property
     def cube_count(self):
