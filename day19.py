@@ -4,13 +4,22 @@
 from aocutil import load_file
 
 
-def parse_input(line_list):
+MODIFY_LOOKUP = {
+    '8': '42 | 42 8',
+    '11': '42 31 | 42 11 31',
+}
+
+
+def parse_input(line_list, modify):
     rule_lookup = {}
     message_list = []
 
     for line in line_list:
         if ':' in line:
             rule_num_str, rule_str = line.split(': ')
+            if modify:
+                if rule_num_str in MODIFY_LOOKUP:
+                    rule_str = MODIFY_LOOKUP[rule_num_str]
 
             current_rule_list = []
             rule_list = []
@@ -37,7 +46,7 @@ def parse_input(line_list):
     return rule_lookup, message_list
 
 
-def match_rule(rule_lookup, rule_num, message):
+def match_rule(rule_lookup, rule_num, message, step = 0):
     # print(f'{rule_num=} {message=}')
     if not message:
         # print(f'failed empty message')
@@ -49,15 +58,24 @@ def match_rule(rule_lookup, rule_num, message):
         rule_list = rule_option_list[0]
         if len(rule_list) == 1 and isinstance(rule_list[0], str):
             char_test = message[0] if message[0] == rule_list[0] else ''
-            # if not char_test:
-            #     print(f'failed {message[0]} != {rule_list[0]}')
+            # print(f'failed {message[0]} != {rule_list[0]}' if not char_test else f'found {message[0]}')
             return char_test
+
+        # try a few more rule 8's if we previously failed on rule 11
+        if step:
+            rule_list = tuple([8] * step) + rule_list
 
         for rule in rule_list:
             rule_result = match_rule(rule_lookup, rule, message[len(matched_message):])
             if not rule_result:
-                # print(f'not all rules met {rule=} {message[len(matched_message):]}')
+                # print(f'not all rules met {rule_num=} {rule_list=} {message[len(matched_message):]}')
+
+                # failed on rule 11, so try again with another rule 8 before
+                if rule_num == 0 and rule == 11 and len(rule_lookup[8]) > 1:
+                    return match_rule(rule_lookup, 0, message, step + 1)
+
                 return ''
+
             matched_message += rule_result
 
     else:
@@ -70,26 +88,33 @@ def match_rule(rule_lookup, rule_num, message):
                     result = ''
                     break
                 result += rule_result
+
             if result:
+                # print(f'{rule_num=} {result=}')
                 return result
 
         # print(f'all optional rules not met {rule_num=} {message=}')
         return ''
 
+    # print(f'{rule_num=} {matched_message=}')
     return matched_message
 
 
-def print_results(name, file_name):
+def print_results(name, file_name, modify = False):
     line_list = load_file(file_name)
-    rule_lookup, message_list = parse_input(line_list)
+    rule_lookup, message_list = parse_input(line_list, modify)
     result_list = [match_rule(rule_lookup, 0, message) == message for message in message_list]
     result = sum(result_list)
     print(f'{name} {result}')
 
 
 def run():
-    print_results(f'part1 test 2 =', 'data/day19_test.txt')
+    print_results(f'part1 test 2 =', 'data/day19_test1.txt')
     print_results(f'part1', 'data/day19.txt')
+
+    print_results(f'part2 test 3 =', 'data/day19_test2.txt')
+    print_results(f'part2 test 12 =', 'data/day19_test2.txt', True)
+    print_results(f'part2', 'data/day19.txt', True)
 
 
 if __name__ == "__main__":
