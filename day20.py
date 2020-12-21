@@ -124,6 +124,21 @@ class TileGrid:
             count_set.add(num)
         return count_lookup
 
+    def _check_map_pos(self, map_list, used_tiles, x, y):
+        return map_list
+
+    def get_map(self):
+        used_tiles = set(self.tile_lookup.keys())
+        for corner_num in self.connection_count[2]:
+            used_tiles.remove(corner_num)
+            for pos in range(8):
+                try:
+                    map_list = [None] * self.dimension * self.dimension
+                    map_list[0] = (corner_num, pos)
+                    return self._check_map_pos(map_list, set(used_tiles), 1, 0)
+                except ValueError:
+                    pass
+
 
 def parse_input(line_list):
     tile_lookup = {}
@@ -151,9 +166,19 @@ def print_results_1(name, file_name):
     print(f'{name} {prod(tile_grid.connection_count[2])}')
 
 
+def print_results_2(name, file_name):
+    line_list = load_file(file_name)
+    tile_grid = parse_input(line_list)
+    result = tile_grid.get_map()
+    print(f'{name} {result}')
+
+
 def run():
     print_results_1(f'part1 test 20899048083289 =', 'data/day20_test.txt')
     print_results_1(f'part1', 'data/day20.txt')
+
+    print_results_2(f'part2 test 273 =', 'data/day20_test.txt')
+    print_results_2(f'part2', 'data/day20.txt')
 
 
 if __name__ == "__main__":
