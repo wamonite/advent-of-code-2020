@@ -67,16 +67,27 @@ def search_allergens(ingredient_list):
 def print_results_1(name, file_name):
     line_list = load_file(file_name)
     ingredient_list = parse_input(line_list)
-    allergen_lookup, allergen_free = search_allergens(ingredient_list)
+    _, allergen_free = search_allergens(ingredient_list)
     ingredient_count = 0
     for ingredients, _ in ingredient_list:
         ingredient_count += len(ingredients & allergen_free)
     print(f'{name} {ingredient_count}')
 
 
+def print_results_2(name, file_name):
+    line_list = load_file(file_name)
+    ingredient_list = parse_input(line_list)
+    allergen_lookup, _ = search_allergens(ingredient_list)
+    allergen_list = [allergen_lookup[i] for i in sorted(allergen_lookup.keys())]
+    print(f'{name} {",".join(allergen_list)}')
+
+
 def run():
     print_results_1(f'part1 test 5 =', 'data/day21_test.txt')
     print_results_1(f'part1', 'data/day21.txt')
+
+    print_results_2(f'part2 test mxmxvkd,sqjhc,fvjkl =', 'data/day21_test.txt')
+    print_results_2(f'part2', 'data/day21.txt')
 
 
 if __name__ == "__main__":
