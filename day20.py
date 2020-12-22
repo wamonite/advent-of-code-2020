@@ -24,12 +24,12 @@ class Tile:
         image_lines = list(self.image_lines)
         self.border_value_list = [
             self._calculate_border_values(image_lines),
-            self._calculate_border_values(self.flip_vertically(image_lines)),
+            self._calculate_border_values(image_flip_vertically(image_lines)),
         ]
         for _ in range(3):
-            image_lines = self.rotate_clockwise(image_lines)
+            image_lines = image_rotate_clockwise(image_lines)
             self.border_value_list.append(self._calculate_border_values(image_lines))
-            self.border_value_list.append(self._calculate_border_values(self.flip_vertically(image_lines)))
+            self.border_value_list.append(self._calculate_border_values(image_flip_vertically(image_lines)))
 
     @staticmethod
     def _calculate_border_values(image_lines):
@@ -39,18 +39,6 @@ class Tile:
             get_line_as_int([v[0] for v in image_lines]),
             get_line_as_int([v[-1] for v in image_lines]),
         ]
-
-    @staticmethod
-    def flip_vertically(image_lines):
-        return image_lines[::-1]
-
-    @staticmethod
-    def rotate_clockwise(image_lines):
-        """
-        Rotate tile 90 clockwise https://stackoverflow.com/questions/8421337/rotating-a-two-dimensional-array-in-python
-        """
-
-        return [''.join(t) for t in zip(*image_lines[::-1])]
 
     def check_connections(self, rhs):
         connection_list = []
@@ -76,8 +64,8 @@ class Tile:
             if pos == current_pos:
                 return image_lines
             elif pos == current_pos + 1:
-                return self.flip_vertically(image_lines)
-            image_lines = self.rotate_clockwise(image_lines)
+                return image_flip_vertically(image_lines)
+            image_lines = image_rotate_clockwise(image_lines)
 
     def get_borderless_tile(self, pos):
         return [line[1:-1] for line in self.get_tile(pos)][1:-1]
@@ -180,7 +168,7 @@ class TileGrid:
 
         raise ValueError(f'no valid selection for {x}, {y}')
 
-    def get_map_solutions(self):
+    def get_map_solutions(self, max = None):
         map_solutions = []
         for corner_num in self.connection_count[2]:
             free_tiles = set(self.tile_lookup.keys())
@@ -193,6 +181,9 @@ class TileGrid:
 
                 except ValueError:
                     pass
+
+            if max is not None and len(map_solutions) >= max:
+                break
 
         return map_solutions
 
@@ -257,6 +248,18 @@ def get_pixel_count(line):
     return sum([1 if c == '#' else 0 for c in line])
 
 
+def image_flip_vertically(image_lines):
+    return image_lines[::-1]
+
+
+def image_rotate_clockwise(image_lines):
+    """
+    Rotate tile 90 clockwise https://stackoverflow.com/questions/8421337/rotating-a-two-dimensional-array-in-python
+    """
+
+    return [''.join(t) for t in zip(*image_lines[::-1])]
+
+
 def find_monster(map_image):
     mon_image_lines = MONSTER_IMAGE.splitlines()
     mon_mask = [get_line_as_int(line) for line in mon_image_lines]
@@ -312,10 +315,10 @@ def print_results_1(name, file_name):
 def print_results_2(name, file_name):
     line_list = load_file(file_name)
     tile_grid = parse_input(line_list)
-    map_solutions = tile_grid.get_map_solutions()
-    result = 0
-    for map_solution in map_solutions:
-        map_image = tile_grid.build_image(map_solution)
+    map_solution = tile_grid.get_map_solutions(1)[0]
+    map_image = unflipped_map_image = tile_grid.build_image(map_solution)
+    flipped = False
+    while True:
         found_list = find_monster(map_image)
         if found_list:
             found_count = len(found_list)
@@ -323,6 +326,15 @@ def print_results_2(name, file_name):
             monster_pixel_count = get_pixel_count(MONSTER_IMAGE) * found_count
             result = pixel_count - monster_pixel_count
             break
+
+        if flipped:
+            map_image = image_rotate_clockwise(unflipped_map_image)
+
+        else:
+            unflipped_map_image = map_image
+            map_image = image_flip_vertically(map_image)
+
+        flipped = not flipped
 
     print(f'{name} {result}')
 
